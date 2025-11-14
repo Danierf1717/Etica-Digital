@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuestionario 3D Tendencias Digitales</title>
+    <link rel="stylesheet" href="style2.css">
+    <link rel="shortcut icon" href="imagenes/Imagen_Tendencia.jpg" type="image/x-icon">
+    <style>
+        /* ======== Estilos generales ======== */
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #0e0e0e, #1a1a1a);
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* ======== Preloader ======== */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, #1a1a1a, #000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            opacity: 1;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 60px; height: 60px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {transform: rotate(0deg);}
+            100% {transform: rotate(360deg);}
+        }
+
+        /* ======== Contenido principal ======== */
+        #main-content {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            padding-top: 80px;
+            padding-bottom: 200px;
+            text-align: center;
+        }
+
+        #main-content.visible {
+            opacity: 1;
+        }
+
+        /* ======== Carrusel 3D ======== */
+        .quiz-container {
+            perspective: 1200px;
+            width: 90%;
+            max-width: 700px;
+            margin: 60px auto;
+            position: relative;
+            height: 350px;
+        }
+
+        .quiz-item {
+            position: absolute;
+            width: 100%;
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+            opacity: 0;
+            transition: opacity 0.6s, transform 0.6s;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .quiz-item.active {
+            opacity: 1;
+            transform: rotateY(0deg) scale(1.02);
+        }
+
+        .quiz-item.next {
+            opacity: 0;
+            transform: rotateY(90deg) scale(0.9);
+        }
+
+        .quiz-item.prev {
+            opacity: 0;
+            transform: rotateY(-90deg) scale(0.9);
+        }
+
+        /* ======== Botones ======== */
+        .buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        button {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+            background: #00e0ff;
+        }
+
+        /* ======== Opciones ======== */
+        .options {
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .option {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 6px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option:hover {
+            background: rgba(0,224,255,0.3);
+        }
+
+        .correct {
+            background: rgba(0,255,0,0.3) !important;
+            border: 1px solid #00ff00;
+        }
+
+        .incorrect {
+            background: rgba(255,0,0,0.3) !important;
+            border: 1px solid #ff0000;
+        }
+
+        /* ======== Overlay de pregunta ======== */
+        .question-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .question-overlay.active { opacity: 1; pointer-events: auto; }
+        .question-card {
+            background: #0f1724;
+            color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 720px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            text-align: left;
+        }
+        .question-card h3 { margin-top: 0; }
+        .option-button {
+            display: block;
+            width: 100%;
+            padding: 10px 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+            color: #fff;
+            cursor: pointer;
+            text-align: left;
+        }
+        .option-button.disabled { opacity: 0.6; pointer-events: none; }
+        .option-button.correct { background: rgba(34,197,94,0.14); border-color: rgba(34,197,94,0.6); }
+        .option-button.incorrect { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.6); }
+        .rationale { margin-top: 10px; font-weight: 600; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- ======== Pantalla de carga ======== -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loader"></div>
+    </div>
+
+    <!-- ======== Contenido principal ======== -->
+    <div id="main-content">
+        <h1>Cuestionario 3D - Tendencias Digitales</h1>
+
+        <div id="main-carousel" class="quiz-container">
+            <ul id="carousel-item-wrapper" class="carousel-list"></ul>
+        </div>
+
+        <!-- Overlay que muestra la pregunta seleccionada -->
+        <div id="question-overlay" class="question-overlay" aria-hidden="true">
+            <div class="question-card">
+                <h3 id="question-text">Pregunta</h3>
+                <div id="options-container" class="options"></div>
+                <div id="rationale-text" class="rationale"></div>
+                <div style="text-align:right; margin-top:12px;">
+                    <button id="next-question-btn" class="hidden">Siguiente</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button id="prev">Anterior</button>
+            <button id="next">Siguiente</button>
+        </div>
+   </div>
+
+    <nav class="menu">
+  <input type="radio" name="nav-item" id="m-home" checked>
+  <label for="m-home" onclick="window.location.href='index.html'">Inicio</label>
+
+  <input type="radio" name="nav-item" id="m-search">
+  <label for="m-search" onclick="window.location.href='Principal.html'">Sala</label>
+
+
+  <input type="radio" name="nav-item" id="m-favorites">
+  <label for="m-favorites" onclick="window.location.href='juegos.html'">Juegos</label>
+
+
+  <div class="selector"></div>
+</nav>
+
+        <script>
+            /* ======== Script de preguntas (basado en ejemplo del usuario) ======== */
+           
+         const quizData = [
+                {
+                    "question": "¿Cuál es la definición más precisa de 'Ética Digital' en un contexto profesional?",
+                    "answerOptions": [
+                        { "text": "Un conjunto de leyes que regulan el uso de Internet y previenen el cibercrimen.", "isCorrect": false, "rationale": "Esto describe la 'legalidad' o 'derecho informático', que es reactivo." },
+                        { "text": "El marco de principios y valores morales que rigen el comportamiento y la toma de decisiones en el uso de las tecnologías digitales.", "isCorrect": true, "rationale": "Correcto. Abarca los valores, los principios morales y la toma de decisiones." },
+                        { "text": "Las normas de etiqueta (netiqueta) para comunicarse correctamente en correos electrónicos y redes sociales.", "isCorrect": false, "rationale": "La 'netiqueta' es solo un componente, la ética digital es mucho más amplia." },
+                        { "text": "El estudio de cómo las computadoras pueden tomar decisiones morales por sí mismas.", "isCorrect": false, "rationale": "Eso es 'ética de las máquinas', una subdisciplina, no la definición completa." }
+                    ]
+                },
+                {
+                    "question": "El principio de 'Sociedad Digital Dinámica' implica que las normas éticas...",
+                    "answerOptions": [
+                        { "text": "Deben ser rígidas y estáticas para crear una base sólida.", "isCorrect": false, "rationale": "Este principio establece lo contrario; la rigidez es inviable." },
+                        { "text": "Solo deben ser creadas por los gobiernos.", "isCorrect": false, "rationale": "Esto se contradice con el principio de Cooperación y la velocidad de la ley." },
+                        { "text": "Deben ser flexibles, proactivas y revisarse continuamente para adaptarse a la innovación.", "isCorrect": true, "rationale": "Correcto. La ética debe ser adaptable y prever futuros dilemas." },
+                        { "text": "Son menos importantes que la velocidad de la innovación tecnológica.", "isCorrect": false, "rationale": "Este principio argumenta que la ética debe guiar la innovación." }
+                    ]
+                },
+                {
+                    "question": "¿Qué concepto clave del Principio de 'Datos y Privacidad' va más allá de la simple protección y se centra en el control del individuo sobre su información?",
+                    "answerOptions": [
+                        { "text": "Minimización de Datos", "isCorrect": false, "rationale": "La minimización es una técnica, pero el concepto de control es más amplio." },
+                        { "text": "Consentimiento Informado", "isCorrect": false, "rationale": "El consentimiento es el mecanismo, no el derecho fundamental en sí." },
+                        { "text": "Autodeterminación Informativa", "isCorrect": true, "rationale": "Este es el término preciso que define el derecho soberano del individuo sobre sus datos." },
+                        { "text": "Transparencia", "isCorrect": false, "rationale": "La transparencia es un requisito para que el usuario pueda tomar una decisión." }
+                    ]
+                },
+                {
+                    "question": "El modelo de gobernanza 'Multistakeholder' (múltiples partes interesadas) es fundamental para el principio de:",
+                    "answerOptions": [
+                        { "text": "Conducta Digital", "isCorrect": false, "rationale": "La conducta digital es más individual; este modelo es de gobernanza global." },
+                        { "text": "Sociedad Digital Dinámica", "isCorrect": false, "rationale": "Aunque se relaciona, es la herramienta principal de otro principio." },
+                        { "text": "Datos y Privacidad", "isCorrect": false, "rationale": "Este modelo se usa para *discutir* la privacidad, pero es el mecanismo central de otro principio." },
+                        { "text": "Cooperación y Diálogo", "isCorrect": true, "rationale": "Correcto. Requiere la cooperación de gobiernos, sector privado, sociedad civil y academia." }
+                    ]
+                },
+                {
+                    "question": "El concepto de 'Brecha de Oportunidad (Nivel 3)' dentro del Principio de 'Participación' se refiere a:",
+                    "answerOptions": [
+                        { "text": "La diferencia en la velocidad de conexión a Internet.", "isCorrect": false, "rationale": "Esto corresponde a la 'Brecha de Acceso (Nivel 1)'." },
+                        { "text": "La diferencia en la capacidad de *crear, innovar y capitalizar* las herramientas digitales, no solo consumirlas.", "isCorrect": true, "rationale": "Correcto. Es la brecha más avanzada, sobre generar valor." },
+                        { "text": "La diferencia en las habilidades para usar software de oficina.", "isCorrect": false, "rationale": "Esto se refiere a la 'Brecha de Uso (Nivel 2)'." },
+                        { "text": "La diferencia de edad en la adopción de nuevas tecnologías.", "isCorrect": false, "rationale": "La edad es un factor, pero no la definición de esta brecha." }
+                    ]
+                },
+                {
+                    "question": "¿Cuál es la diferencia clave entre 'Ética' y 'Legalidad' en el contexto digital?",
+                    "answerOptions": [
+                        { "text": "La ética es lo que hacen las empresas y la legalidad es lo que hace el gobierno.", "isCorrect": false, "rationale": "Ambas partes deben lidiar tanto con la ética como con la legalidad." },
+                        { "text": "No hay diferencia, son sinónimos.", "isCorrect": false, "rationale": "Es un error común; la ley a menudo se basa en la ética, pero no son lo mismo." },
+                        { "text": "La legalidad se refiere a lo que *podemos* hacer (ley), mientras que la ética se refiere a lo que *deberíamos* hacer (correcto).", "isCorrect": true, "rationale": "Esta es la distinción profesional clave. La ley es reactiva, la ética es proactiva." },
+                        { "text": "La ética solo aplica a los individuos, mientras que la legalidad solo aplica a las corporaciones.", "isCorrect": false, "rationale": "Ambas se aplican a ambos." }
+                    ]
+                },
+                {
+                    "question": "Implementar la 'Ética por Diseño' (Ethics by Design) es una aplicación práctica del principio de:",
+                    "answerOptions": [
+                        { "text": "Cooperación y Diálogo", "isCorrect": false, "rationale": "El diálogo ayuda a definir la ética, pero 'por diseño' es sobre la creación." },
+                        { "text": "Sociedad Digital Dinámica", "isCorrect": true, "rationale": "Correcto. Es la metodología proactiva que exige este principio para no reaccionar tarde." },
+                        { "text": "Participación", "isCorrect": false, "rationale": "El 'Diseño Universal' se relaciona con la Participación, pero 'Ética por Diseño' es más amplio." },
+                        { "text": "Conducta Digital", "isCorrect": false, "rationale": "La Conducta es sobre el *uso*, 'por Diseño' es sobre la *creación*." }
+                    ]
+                },
+                {
+                    "question": "Un algoritmo de contratación que aprende de datos históricos y discrimina a ciertos grupos es un ejemplo de:",
+                    "answerOptions": [
+                        { "text": "Sesgo Algorítmico (Bias)", "isCorrect": true, "rationale": "Definición precisa: el algoritmo automatiza y amplifica un prejuicio." },
+                        { "text": "Patrón Oscuro (Dark Pattern)", "isCorrect": false, "rationale": "Un patrón oscuro es un diseño de interfaz engañoso, no un resultado de IA." },
+                        { "text": "Minimización de Datos", "isCorrect": false, "rationale": "Es un principio de privacidad, no el nombre de este dilema." },
+                        { "text": "Capitalismo de Vigilancia", "isCorrect": false, "rationale": "Es el modelo de negocio; el sesgo es un *resultado* dentro de ese modelo." }
+                    ]
+                },
+                {
+                    "question": "Según el Principio de 'Conducta Digital', ¿cuál es la 'responsabilidad algorítmica' del usuario?",
+                    "answerOptions": [
+                        { "text": "La responsabilidad de programar algoritmos éticos.", "isCorrect": false, "rationale": "Esa es la responsabilidad del desarrollador, no del usuario." },
+                        { "text": "Comprender que nuestros clics, 'likes' y visualizaciones entrenan activamente a los algoritmos.", "isCorrect": true, "rationale": "Correcto. El usuario es co-creador de su realidad algorítmica." },
+                        { "text": "La obligación de usar antivirus.", "isCorrect": false, "rationale": "Eso es 'higiene digital' o ciberseguridad, no responsabilidad algorítmica." },
+                        { "text": "No compartir la contraseña con nadie.", "isCorrect": false, "rationale": "Eso es ciberseguridad básica." }
+                    ]
+                },
+                {
+                    "question": "¿Por qué se considera la ética digital una 'ventaja competitiva' para una empresa?",
+                    "answerOptions": [
+                        { "text": "Porque permite ignorar las leyes de privacidad y moverse más rápido.", "isCorrect": false, "rationale": "Todo lo contrario. La falta de ética aumenta el riesgo regulatorio." },
+                        { "text": "Porque genera confianza en el usuario ('Economía de la Confianza'), fomentando la lealtad y protegiendo la reputación.", "isCorrect": true, "rationale": "Exacto. En el mercado digital, la confianza es el activo más valioso." },
+                        { "text": "Porque es un gasto de cumplimiento obligatorio que todas las empresas deben hacer.", "isCorrect": false, "rationale": "Ver la ética solo como un 'gasto' es la visión antigua; es una 'inversión'." },
+                        { "text": "Porque permite recolectar más datos de los usuarios sin que ellos se den cuenta.", "isCorrect": false, "rationale": "Eso es una práctica no ética que destruye la confianza." }
+                    ]
+                }
+            ];
+
+            let currentQuestionIndex = 0;
+            let isQuestionActive = false;
+
+            const carouselWrapper = document.getElementById('main-carousel');
+            const carouselItemsContainer = document.getElementById('carousel-item-wrapper');
+            const questionOverlay = document.getElementById('question-overlay');
+            const questionTextEl = document.getElementById('question-text');
+            const optionsContainerEl = document.getElementById('options-container');
+            const rationaleTextEl = document.getElementById('rationale-text');
+            const nextButton = document.getElementById('next-question-btn');
+            const mainContentEl = document.getElementById('main-content');
+            const loadingOverlayEl = document.getElementById('loading-overlay');
+
+            const numElements = quizData.length;
+
+            const createCarouselItems = () => {
+                quizData.forEach((q, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'quiz-item';
+                    li.innerHTML = `<h3>Pregunta ${index + 1}</h3><p>${q.question}</p>`;
+                    li.addEventListener('click', () => {
+                        if (index === currentQuestionIndex && !isQuestionActive) {
+                            showQuestion(index);
+                        }
+                    });
+                    carouselItemsContainer.appendChild(li);
+                });
+            };
+
+            const updateCarousel = () => {
+                const items = document.querySelectorAll('.quiz-item');
+                items.forEach((item, i) => {
+                    item.classList.remove('active', 'prev', 'next');
+                    if (i === currentQuestionIndex) {
+                        item.classList.add('active');
+                    } else if (i === (currentQuestionIndex + 1) % numElements) {
+                        item.classList.add('next');
+                    } else if (i === (currentQuestionIndex - 1 + numElements) % numElements) {
+                        item.classList.add('prev');
+                    }
+                });
+            };
+
+            const showQuestion = (index) => {
+                isQuestionActive = true;
+                currentQuestionIndex = index;
+                const currentQuestion = quizData[index];
+                questionTextEl.textContent = currentQuestion.question;
+                optionsContainerEl.innerHTML = '';
+                rationaleTextEl.textContent = '';
+                nextButton.classList.add('hidden');
+                currentQuestion.answerOptions.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-button';
+                    btn.type = 'button';
+                    btn.innerHTML = opt.text;
+                    btn.addEventListener('click', () => checkAnswer(opt, btn));
+                    optionsContainerEl.appendChild(btn);
+                });
+                questionOverlay.classList.add('active');
+            };
+
+            const checkAnswer = (selectedOption, selectedButton) => {
+                Array.from(optionsContainerEl.children).forEach(b => {
+                    b.classList.add('disabled');
+                });
+                rationaleTextEl.textContent = selectedOption.rationale || '';
+                const allOptions = quizData[currentQuestionIndex].answerOptions;
+                Array.from(optionsContainerEl.children).forEach((button, idx) => {
+                    const opt = allOptions[idx];
+                    if (opt.isCorrect) button.classList.add('correct');
+                    else if (button === selectedButton) button.classList.add('incorrect');
+                });
+                nextButton.classList.remove('hidden');
+            };
+
+            const nextQuestion = () => {
+                isQuestionActive = false;
+                questionOverlay.classList.remove('active');
+                currentQuestionIndex = (currentQuestionIndex + 1) % numElements;
+                updateCarousel();
+                if (currentQuestionIndex === 0) {
+                    setTimeout(() => {
+                        carouselWrapper.style.display = 'none';
+                        document.getElementById('prev').style.display = 'none';
+                        document.getElementById('next').style.display = 'none';
+                        const subtitle = document.createElement('p');
+                        subtitle.textContent = '¡Has completado todas las preguntas! ¡Excelente trabajo!';
+                        subtitle.style.color = '#10b981';
+                        subtitle.style.fontSize = '1.2rem';
+                        mainContentEl.appendChild(subtitle);
+                    }, 300);
+                }
+            };
+
+            nextButton.addEventListener('click', nextQuestion);
+
+            window.addEventListener('load', () => {
+                createCarouselItems();
+                updateCarousel();
+                if (loadingOverlayEl) {
+                    loadingOverlayEl.classList.add('hidden');
+                    setTimeout(() => {
+                        if (loadingOverlayEl.parentNode) loadingOverlayEl.parentNode.removeChild(loadingOverlayEl);
+                        mainContentEl.classList.add('visible');
+                    }, 300);
+                } else {
+                    mainContentEl.classList.add('visible');
+                }
+
+                document.getElementById('next').addEventListener('click', () => {
+                    if (isQuestionActive) return;
+                    currentQuestionIndex = (currentQuestionIndex + 1) % numElements;
+                    updateCarousel();
+                });
+
+                document.getElementById('prev').addEventListener('click', () => {
+                    if (isQuestionActive) return;
+                    currentQuestionIndex = (currentQuestionIndex - 1 + numElements) % numElements;
+                    updateCarousel();
+                });
+            });
+        </script>
+        <script src="script.js"></script>
+</body>
+</html>
